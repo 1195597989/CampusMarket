@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>分类测试</title>
+</head>
+<body>
+    <h1>商品分类测试</h1>
+    <div id="output"></div>
+
+    <script>
+        async function testCategories() {
+            try {
+                const response = await fetch('http://localhost:8080/api/products');
+                const data = await response.json();
+                
+                const output = document.getElementById('output');
+                output.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                
+                // 提取所有分类
+                if (data.data && data.data.content) {
+                    const categories = [...new Set(data.data.content.map(p => p.category))];
+                    console.log('数据库中的分类:', categories);
+                    
+                    const categoryDiv = document.createElement('div');
+                    categoryDiv.innerHTML = '<h2>数据库中的分类:</h2><ul>' + 
+                        categories.map(cat => `<li>${cat}</li>`).join('') + '</ul>';
+                    output.appendChild(categoryDiv);
+                }
+            } catch (error) {
+                document.getElementById('output').innerHTML = '错误: ' + error.message;
+            }
+        }
+        
+        testCategories();
+    </script>
+</body>
+</html>

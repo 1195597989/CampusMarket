@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vue应用调试</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .debug-panel { background: #f5f5f5; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h1>Vue应用调试页面</h1>
+    
+    <div class="debug-panel">
+        <h3>检查步骤:</h3>
+        <ol>
+            <li>测试API连接</li>
+            <li>检查Vue.js加载</li>
+            <li>验证产品数据</li>
+        </ol>
+    </div>
+    
+    <div id="test-results"></div>
+    
+    <script>
+        const results = document.getElementById('test-results');
+        
+        function addResult(title, content, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `debug-panel ${type}`;
+            div.innerHTML = `<h4>${title}</h4><pre>${content}</pre>`;
+            results.appendChild(div);
+        }
+        
+        // 1. 测试API连接
+        fetch('http://localhost:8080/api/products')
+            .then(response => response.json())
+            .then(data => {
+                addResult('✅ API连接测试', 
+                    `状态: 成功\n` +
+                    `成功状态: ${data.success}\n` +
+                    `产品数量: ${data.data?.content?.length || 0}\n` +
+                    `数据结构: ${JSON.stringify(data, null, 2).substring(0, 500)}...`, 
+                    'success'
+                );
+                
+                // 测试产品数据
+                if (data.data && data.data.content && data.data.content.length > 0) {
+                    const firstProduct = data.data.content[0];
+                    addResult('✅ 产品数据结构', 
+                        `第一个产品:\n` +
+                        `ID: ${firstProduct.id}\n` +
+                        `标题: ${firstProduct.title}\n` +
+                        `价格: ${firstProduct.price}\n` +
+                        `卖家: ${firstProduct.seller?.username}\n` +
+                        `完整数据: ${JSON.stringify(firstProduct, null, 2)}`, 
+                        'success'
+                    );
+                } else {
+                    addResult('❌ 产品数据', '没有找到产品数据', 'error');
+                }
+            })
+            .catch(error => {
+                addResult('❌ API连接测试', `错误: ${error.message}`, 'error');
+            });
+        
+        // 2. 检查Vue.js是否可用
+        setTimeout(() => {
+            if (typeof Vue !== 'undefined') {
+                addResult('✅ Vue.js加载', `Vue版本: ${Vue.version || '已加载'}`, 'success');
+            } else {
+                addResult('❌ Vue.js加载', 'Vue.js未加载', 'error');
+            }
+            
+            if (typeof ElementPlus !== 'undefined') {
+                addResult('✅ Element Plus加载', 'Element Plus已加载', 'success');
+            } else {
+                addResult('❌ Element Plus加载', 'Element Plus未加载', 'error');
+            }
+        }, 1000);
+        
+        // 3. 测试本地存储
+        setTimeout(() => {
+            const token = localStorage.getItem('token');
+            const user = localStorage.getItem('user');
+            
+            addResult('💾 本地存储状态', 
+                `Token: ${token ? '已保存' : '无'}\n` +
+                `用户: ${user ? JSON.parse(user).username : '无'}`, 
+                'info'
+            );
+        }, 1500);
+    </script>
+    
+    <!-- 包含Vue和Element Plus -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus@2.4.4/dist/index.full.js"></script>
+</body>
+</html>

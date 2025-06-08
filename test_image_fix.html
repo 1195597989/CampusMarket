@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片修复测试</title>
+    <!-- Vue 3 CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- Element Plus UI 库 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css" />
+    <script src="https://unpkg.com/element-plus/dist/index.full.js"></script>
+    <style>
+        body {
+            margin: 20px;
+            font-family: Arial, sans-serif;
+        }
+        .product-card {
+            max-width: 300px;
+            margin: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <h1>图片修复测试</h1>
+        
+        <div class="product-card">
+            <h3>测试商品（无图片）</h3>
+            <div style="text-align: center; margin-bottom: 15px;">
+                <el-image 
+                    :src="null"
+                    style="width: 100%; height: 150px; object-fit: cover;"
+                    fit="cover"
+                    :lazy="true"
+                >
+                    <template #placeholder>
+                        <div style="width: 100%; height: 150px; display: flex; align-items: center; justify-content: center; background-color: #f5f7fa; color: #909399;">
+                            <i class="el-icon-picture" style="font-size: 30px;"></i>
+                        </div>
+                    </template>
+                    <template #error>
+                        <div style="width: 100%; height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #f5f7fa; color: #909399;">
+                            <i class="el-icon-picture" style="font-size: 30px; margin-bottom: 10px;"></i>
+                            <span style="font-size: 12px;">暂无图片</span>
+                        </div>
+                    </template>
+                </el-image>
+            </div>
+            <p>这是一个测试商品，用于验证图片占位符是否正常显示。</p>
+        </div>
+
+        <div class="product-card">
+            <h3>测试商品（错误URL）</h3>
+            <div style="text-align: center; margin-bottom: 15px;">
+                <el-image 
+                    src="https://invalid-url.com/image.jpg"
+                    style="width: 100%; height: 150px; object-fit: cover;"
+                    fit="cover"
+                    :lazy="true"
+                >
+                    <template #placeholder>
+                        <div style="width: 100%; height: 150px; display: flex; align-items: center; justify-content: center; background-color: #f5f7fa; color: #909399;">
+                            <i class="el-icon-picture" style="font-size: 30px;"></i>
+                        </div>
+                    </template>
+                    <template #error>
+                        <div style="width: 100%; height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #f5f7fa; color: #909399;">
+                            <i class="el-icon-picture" style="font-size: 30px; margin-bottom: 10px;"></i>
+                            <span style="font-size: 12px;">暂无图片</span>
+                        </div>
+                    </template>
+                </el-image>
+            </div>
+            <p>这是一个测试商品，用于验证图片加载失败时的错误处理。</p>
+        </div>
+
+        <div style="margin-top: 30px;">
+            <h2>从API加载的商品数据</h2>
+            <div v-loading="loading">
+                <div v-for="product in products" :key="product.id" class="product-card">
+                    <h3>{{ product.title }}</h3>
+                    <div style="text-align: center; margin-bottom: 15px;">
+                        <el-image 
+                            :src="product.imageUrl"
+                            style="width: 100%; height: 150px; object-fit: cover;"
+                            fit="cover"
+                            :lazy="true"
+                        >
+                            <template #placeholder>
+                                <div style="width: 100%; height: 150px; display: flex; align-items: center; justify-content: center; background-color: #f5f7fa; color: #909399;">
+                                    <i class="el-icon-picture" style="font-size: 30px;"></i>
+                                </div>
+                            </template>
+                            <template #error>
+                                <div style="width: 100%; height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #f5f7fa; color: #909399;">
+                                    <i class="el-icon-picture" style="font-size: 30px; margin-bottom: 10px;"></i>
+                                    <span style="font-size: 12px;">暂无图片</span>
+                                </div>
+                            </template>
+                        </el-image>
+                    </div>
+                    <p><strong>价格:</strong> ¥{{ product.price }}</p>
+                    <p><strong>分类:</strong> {{ product.category }}</p>
+                    <p>{{ product.description }}</p>
+                    <p><small>ImageURL: {{ product.imageUrl || '(null)' }}</small></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+        const { ElMessage } = ElementPlus;
+
+        createApp({
+            setup() {
+                const products = ref([]);
+                const loading = ref(false);
+
+                const loadProducts = async () => {
+                    loading.value = true;
+                    try {
+                        const response = await fetch('http://localhost:8080/api/products');
+                        const data = await response.json();
+                        
+                        if (response.ok && data.data && data.data.content) {
+                            products.value = data.data.content;
+                            console.log('加载的商品数据:', products.value);
+                        } else {
+                            ElMessage.error('加载商品失败');
+                        }
+                    } catch (error) {
+                        console.error('API错误:', error);
+                        ElMessage.error('网络错误: ' + error.message);
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+
+                onMounted(() => {
+                    loadProducts();
+                });
+
+                return {
+                    products,
+                    loading,
+                    loadProducts
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

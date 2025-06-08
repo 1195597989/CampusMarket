@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分类筛选调试</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .product-item { margin: 10px 0; padding: 10px; background: #f5f5f5; }
+        select, input { margin: 5px; padding: 5px; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <h1>分类筛选调试页面</h1>
+        
+        <div class="debug-section">
+            <h2>筛选控件</h2>            <select v-model="filterCategory" @change="onCategoryChange">
+                <option value="">所有分类</option>
+                <option value="数码电子">数码电子</option>
+                <option value="图书教材">图书教材</option>
+                <option value="运动户外">运动户外</option>
+                <option value="生活用品">生活用品</option>
+                <option value="其他">其他</option>
+            </select>
+            <input v-model="searchKeyword" placeholder="搜索关键词" @input="onSearchChange">
+        </div>
+
+        <div class="debug-section">
+            <h2>调试信息</h2>
+            <p>当前分类: {{ filterCategory || '无' }}</p>
+            <p>当前搜索: {{ searchKeyword || '无' }}</p>
+            <p>原始商品数量: {{ products.length }}</p>
+            <p>筛选后商品数量: {{ filteredProducts.length }}</p>
+            <p>加载状态: {{ loading ? '加载中' : '已完成' }}</p>
+        </div>
+
+        <div class="debug-section">
+            <h2>原始商品数据结构</h2>
+            <pre>{{ JSON.stringify(products.slice(0, 2), null, 2) }}</pre>
+        </div>
+
+        <div class="debug-section">
+            <h2>筛选后的商品</h2>
+            <div v-if="loading">加载中...</div>
+            <div v-else-if="filteredProducts.length === 0">没有匹配的商品</div>
+            <div v-else>
+                <div v-for="product in filteredProducts" :key="product.id" class="product-item">
+                    <strong>{{ product.title }}</strong> - {{ product.category }} - ¥{{ product.price }}
+                </div>
+            </div>
+        </div>
+
+        <div class="debug-section">
+            <button @click="loadProducts">重新加载商品</button>
+            <button @click="clearFilters">清除筛选</button>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed } = Vue;
+
+        createApp({
+            setup() {
+                const products = ref([]);
+                const loading = ref(false);
+                const filterCategory = ref('');
+                const searchKeyword = ref('');
+
+                const API_BASE = 'http://localhost:8080/api';
+
+                // 计算属性 - 筛选后的商品
+                const filteredProducts = computed(() => {
+                    console.log('计算属性被触发 - 开始筛选');
+                    console.log('原始商品数量:', products.value.length);
+                    console.log('筛选分类:', filterCategory.value);
+                    console.log('搜索关键词:', searchKeyword.value);
+
+                    let result = [...products.value];
+
+                    // 分类筛选
+                    if (filterCategory.value) {
+                        console.log('应用分类筛选:', filterCategory.value);
+                        const beforeFilter = result.length;
+                        result = result.filter(product => {
+                            console.log(`商品 "${product.title}" 分类: "${product.category}", 匹配: ${product.category === filterCategory.value}`);
+                            return product.category === filterCategory.value;
+                        });
+                        console.log(`分类筛选: ${beforeFilter} -> ${result.length}`);
+                    }
+
+                    // 关键词搜索
+                    if (searchKeyword.value) {
+                        console.log('应用关键词搜索:', searchKeyword.value);
+                        const keyword = searchKeyword.value.toLowerCase();
+                        const beforeFilter = result.length;
+                        result = result.filter(product =>
+                            product.title.toLowerCase().includes(keyword) ||
+                            product.description.toLowerCase().includes(keyword)
+                        );
+                        console.log(`关键词筛选: ${beforeFilter} -> ${result.length}`);
+                    }
+
+                    console.log('最终筛选结果数量:', result.length);
+                    return result;
+                });
+
+                // 加载商品
+                const loadProducts = async () => {
+                    loading.value = true;
+                    try {
+                        console.log('开始加载商品...');
+                        const response = await fetch(`${API_BASE}/products`);
+                        const data = await response.json();
+                        
+                        console.log('API响应:', data);
+                        
+                        if (response.ok && data.data) {
+                            // 检查数据结构
+                            if (data.data.content) {
+                                products.value = data.data.content;
+                                console.log('从data.data.content加载商品:', products.value.length);
+                            } else if (Array.isArray(data.data)) {
+                                products.value = data.data;
+                                console.log('从data.data加载商品:', products.value.length);
+                            } else {
+                                console.error('未知的数据结构:', data);
+                            }
+                        } else {
+                            console.error('API调用失败:', data.message || '未知错误');
+                        }
+                    } catch (error) {
+                        console.error('加载商品错误:', error);
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+
+                // 事件处理
+                const onCategoryChange = () => {
+                    console.log('分类改变:', filterCategory.value);
+                };
+
+                const onSearchChange = () => {
+                    console.log('搜索改变:', searchKeyword.value);
+                };
+
+                const clearFilters = () => {
+                    filterCategory.value = '';
+                    searchKeyword.value = '';
+                };
+
+                // 页面加载时获取商品
+                loadProducts();
+
+                return {
+                    products,
+                    loading,
+                    filterCategory,
+                    searchKeyword,
+                    filteredProducts,
+                    loadProducts,
+                    onCategoryChange,
+                    onSearchChange,
+                    clearFilters
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>筛选API测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+        button { margin: 5px; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>筛选API测试页面</h1>
+    
+    <div class="section">
+        <h2>API测试</h2>
+        <button onclick="testAPI()">测试API</button>
+        <button onclick="testCategories()">测试分类筛选</button>
+        <button onclick="clearOutput()">清空输出</button>
+    </div>
+
+    <div class="section">
+        <h2>API响应</h2>
+        <pre id="output">点击上方按钮开始测试...</pre>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+        
+        function log(message) {
+            const output = document.getElementById('output');
+            output.textContent += new Date().toLocaleTimeString() + ': ' + message + '\n';
+        }
+        
+        function clearOutput() {
+            document.getElementById('output').textContent = '';
+        }
+        
+        async function testAPI() {
+            try {
+                log('开始测试API...');
+                const response = await fetch(`${API_BASE}/products`);
+                const data = await response.json();
+                
+                log('API响应状态: ' + response.status);
+                log('API响应结构:');
+                log(JSON.stringify(data, null, 2));
+                
+                if (data.data && data.data.content) {
+                    log('商品数量: ' + data.data.content.length);
+                    
+                    // 检查分类分布
+                    const categoryCount = {};
+                    data.data.content.forEach(product => {
+                        const category = product.category;
+                        categoryCount[category] = (categoryCount[category] || 0) + 1;
+                    });
+                    
+                    log('分类分布:');
+                    log(JSON.stringify(categoryCount, null, 2));
+                    
+                    // 显示前几个商品的详细信息
+                    log('前3个商品详情:');
+                    data.data.content.slice(0, 3).forEach((product, index) => {
+                        log(`商品${index + 1}: ${product.title} - 分类: ${product.category} - 价格: ¥${product.price}`);
+                    });
+                } else {
+                    log('数据结构异常!');
+                }
+            } catch (error) {
+                log('API测试错误: ' + error.message);
+            }
+        }
+        
+        async function testCategories() {
+            try {
+                log('开始测试分类筛选...');
+                const categories = ['electronics', 'books', 'sports', 'daily', 'others'];
+                
+                for (const category of categories) {
+                    log(`\n测试分类: ${category}`);
+                    
+                    const response = await fetch(`${API_BASE}/products`);
+                    const data = await response.json();
+                    
+                    if (data.data && data.data.content) {
+                        const filteredProducts = data.data.content.filter(product => product.category === category);
+                        log(`${category} 分类商品数量: ${filteredProducts.length}`);
+                        
+                        filteredProducts.forEach(product => {
+                            log(`  - ${product.title} (${product.category})`);
+                        });
+                    }
+                }
+            } catch (error) {
+                log('分类测试错误: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

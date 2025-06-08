@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简化测试页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        input, button, textarea {
+            margin: 5px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 3px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>校园二手交易平台 - 简化测试</h1>
+    
+    <div class="section">
+        <h2>用户注册</h2>
+        <div>
+            <input type="text" id="regUsername" placeholder="用户名" value="testuser">
+            <input type="email" id="regEmail" placeholder="邮箱" value="test@campus.com">
+            <input type="password" id="regPassword" placeholder="密码" value="123456">
+            <input type="text" id="regPhone" placeholder="手机号" value="13800138000">
+            <button onclick="register()">注册</button>
+        </div>
+        <div id="regResult" class="result"></div>
+    </div>
+
+    <div class="section">
+        <h2>用户登录</h2>
+        <div>
+            <input type="text" id="loginUsername" placeholder="用户名" value="testuser">
+            <input type="password" id="loginPassword" placeholder="密码" value="123456">
+            <button onclick="login()">登录</button>
+        </div>
+        <div id="loginResult" class="result"></div>
+        <div>
+            <strong>当前Token:</strong>
+            <textarea id="currentToken" readonly style="width: 100%; height: 60px;"></textarea>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>发布商品</h2>
+        <div>
+            <input type="text" id="productTitle" placeholder="商品名称" value="二手MacBook">
+            <textarea id="productDesc" placeholder="商品描述">9成新MacBook Pro，性能优良</textarea>
+            <input type="number" id="productPrice" placeholder="价格" value="6800">
+            <select id="productCategory">
+                <option value="electronics">数码电子</option>
+                <option value="books">图书教材</option>
+                <option value="sports">运动用品</option>
+            </select>
+            <button onclick="createProduct()">发布商品</button>
+        </div>
+        <div id="productResult" class="result"></div>
+    </div>
+
+    <div class="section">
+        <h2>商品列表</h2>
+        <button onclick="loadProducts()">加载所有商品</button>
+        <div id="productList" class="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+        let currentToken = '';
+
+        function showResult(elementId, message, isSuccess) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = isSuccess ? 'result success' : 'result error';
+        }
+
+        async function register() {
+            const username = document.getElementById('regUsername').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value.trim();
+            const phone = document.getElementById('regPhone').value.trim();
+
+            if (!username || !email || !password) {
+                showResult('regResult', '请填写必要信息', false);
+                return;
+            }
+
+            try {
+                console.log('开始注册...', { username, email, phone });
+                
+                const response = await fetch(`${API_BASE}/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, email, password, phone })
+                });
+
+                console.log('注册响应状态:', response.status);
+                const data = await response.json();
+                console.log('注册响应数据:', data);
+
+                if (response.ok) {
+                    showResult('regResult', '注册成功！用户ID: ' + (data.data?.id || '未知'), true);
+                } else {
+                    showResult('regResult', data.message || '注册失败', false);
+                }
+            } catch (error) {
+                console.error('注册错误:', error);
+                showResult('regResult', '网络错误：' + error.message, false);
+            }
+        }
+
+        async function login() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+
+            if (!username || !password) {
+                showResult('loginResult', '请输入用户名和密码', false);
+                return;
+            }
+
+            try {
+                console.log('开始登录...', { username });
+                
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                console.log('登录响应状态:', response.status);
+                const data = await response.json();
+                console.log('登录响应数据:', data);
+
+                if (response.ok && data.data && data.data.token) {
+                    currentToken = data.data.token;
+                    document.getElementById('currentToken').value = currentToken;
+                    showResult('loginResult', '登录成功！', true);
+                } else {
+                    showResult('loginResult', data.message || '登录失败', false);
+                }
+            } catch (error) {
+                console.error('登录错误:', error);
+                showResult('loginResult', '网络错误：' + error.message, false);
+            }
+        }
+
+        async function createProduct() {
+            if (!currentToken) {
+                showResult('productResult', '请先登录', false);
+                return;
+            }
+
+            const title = document.getElementById('productTitle').value.trim();
+            const description = document.getElementById('productDesc').value.trim();
+            const price = document.getElementById('productPrice').value;
+            const category = document.getElementById('productCategory').value;
+
+            if (!title || !price || !category) {
+                showResult('productResult', '请填写必要信息', false);
+                return;
+            }
+
+            try {
+                console.log('开始发布商品...', { title, description, price, category });
+                
+                const response = await fetch(`${API_BASE}/products`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify({ title, description, price: parseFloat(price), category })
+                });
+
+                console.log('发布商品响应状态:', response.status);
+                const data = await response.json();
+                console.log('发布商品响应数据:', data);
+
+                if (response.ok) {
+                    showResult('productResult', '商品发布成功！ID: ' + (data.data?.id || '未知'), true);
+                    loadProducts(); // 刷新商品列表
+                } else {
+                    showResult('productResult', data.message || '发布失败', false);
+                }
+            } catch (error) {
+                console.error('发布商品错误:', error);
+                showResult('productResult', '网络错误：' + error.message, false);
+            }
+        }
+
+        async function loadProducts() {
+            try {
+                console.log('开始加载商品...');
+                
+                const response = await fetch(`${API_BASE}/products`);
+                console.log('加载商品响应状态:', response.status);
+                
+                const data = await response.json();
+                console.log('加载商品响应数据:', data);
+
+                if (response.ok && data.data) {
+                    const products = data.data;
+                    let html = `<h3>商品列表 (共${products.length}个)</h3>`;
+                    
+                    if (products.length === 0) {
+                        html += '<p>暂无商品</p>';
+                    } else {
+                        products.forEach(product => {
+                            html += `
+                                <div style="border: 1px solid #ddd; margin: 10px 0; padding: 10px;">
+                                    <h4>${product.title}</h4>
+                                    <p>价格: ¥${product.price}</p>
+                                    <p>分类: ${product.category}</p>
+                                    <p>描述: ${product.description || '无'}</p>
+                                    <p>发布者: ${product.seller?.username || '未知'}</p>
+                                    <p>状态: ${product.status}</p>
+                                    <p>发布时间: ${new Date(product.createdAt).toLocaleString()}</p>
+                                </div>
+                            `;
+                        });
+                    }
+                    
+                    document.getElementById('productList').innerHTML = html;
+                    document.getElementById('productList').className = 'result success';
+                } else {
+                    showResult('productList', data.message || '加载失败', false);
+                }
+            } catch (error) {
+                console.error('加载商品错误:', error);
+                showResult('productList', '网络错误：' + error.message, false);
+            }
+        }
+
+        // 页面加载时尝试从localStorage恢复token
+        window.onload = function() {
+            const savedToken = localStorage.getItem('token');
+            if (savedToken) {
+                currentToken = savedToken;
+                document.getElementById('currentToken').value = currentToken;
+            }
+        };
+    </script>
+</body>
+</html>

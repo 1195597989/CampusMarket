@@ -1,5 +1,7 @@
 package org.example.campusmarket.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -9,15 +11,16 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Entity
 @Table(name = "products")
 public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
+    private Long id;    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
@@ -49,8 +52,7 @@ public class Product {
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
-
+    private LocalDateTime createdAt;    @JsonIgnore
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Message> messages;
 
@@ -157,9 +159,19 @@ public class Product {
 
     public List<Message> getMessages() {
         return messages;
-    }
-
-    public void setMessages(List<Message> messages) {
+    }    public void setMessages(List<Message> messages) {
         this.messages = messages;
+    }
+    
+    // 为JSON序列化提供卖家信息，避免循环引用
+    @JsonProperty("seller")
+    public Map<String, Object> getSeller() {
+        if (user == null) return null;
+        
+        Map<String, Object> seller = new HashMap<>();
+        seller.put("id", user.getId());
+        seller.put("username", user.getUsername());
+        seller.put("email", user.getEmail());
+        return seller;
     }
 }

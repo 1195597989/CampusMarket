@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>校园二手交易平台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            min-height: 100vh;
+            backdrop-filter: blur(10px);
+        }
+        
+        .header {
+            background: #409eff;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .nav-menu {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .nav-item {
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+        
+        .nav-item:hover, .nav-item.active {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .user-section {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .main-content {
+            padding: 20px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #409eff;
+            box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #409eff;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #66b1ff;
+        }
+        
+        .btn-success {
+            background: #67c23a;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #85ce61;
+        }
+        
+        .btn-warning {
+            background: #e6a23c;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #909399;
+            color: white;
+        }
+        
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .product-card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .product-image {
+            width: 100%;
+            height: 200px;
+            background: #f5f5f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+        }
+        
+        .product-info {
+            padding: 15px;
+        }
+        
+        .product-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .product-price {
+            font-size: 20px;
+            color: #e6a23c;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .product-desc {
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+        
+        .product-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .tag {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: white;
+        }
+        
+        .tag-electronics { background: #409eff; }
+        .tag-books { background: #67c23a; }
+        .tag-sports { background: #e6a23c; }
+        .tag-daily { background: #909399; }
+        .tag-others { background: #f56c6c; }
+        
+        .status-available { 
+            background: #67c23a;
+            color: white;
+        }
+        
+        .status-sold {
+            background: #909399;
+            color: white;
+        }
+        
+        .search-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .search-bar > * {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90%;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        .message-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .message-item {
+            background: #f9f9f9;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #409eff;
+        }
+        
+        .message-sent {
+            border-left-color: #67c23a;
+            background: #f0f9ff;
+        }
+        
+        .message-received {
+            border-left-color: #e6a23c;
+            background: #fff9f0;
+        }
+        
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        .empty {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        
+        .alert {
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            border: 1px solid transparent;
+        }
+        
+        .alert-success {
+            color: #155724;
+            background: #d4edda;
+            border-color: #c3e6cb;
+        }
+        
+        .alert-error {
+            color: #721c24;
+            background: #f8d7da;
+            border-color: #f5c6cb;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .nav-menu {
+                order: 2;
+            }
+            
+            .user-section {
+                order: 1;
+            }
+            
+            .search-bar {
+                flex-direction: column;
+            }
+            
+            .search-bar > * {
+                min-width: auto;
+            }
+            
+            .product-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="app-container">
+            <!-- 头部导航 -->
+            <div class="header">
+                <div class="logo">🛒 校园市场</div>
+                <div class="nav-menu">
+                    <div class="nav-item" :class="{active: activeTab === 'market'}" @click="setActiveTab('market')">
+                        商品市场
+                    </div>
+                    <div v-if="isLoggedIn" class="nav-item" :class="{active: activeTab === 'publish'}" @click="setActiveTab('publish')">
+                        发布商品
+                    </div>
+                    <div v-if="isLoggedIn" class="nav-item" :class="{active: activeTab === 'messages'}" @click="setActiveTab('messages')">
+                        我的消息
+                    </div>
+                </div>
+                <div class="user-section">
+                    <div v-if="!isLoggedIn">
+                        <button class="btn btn-primary" @click="showLoginModal = true">登录</button>
+                        <button class="btn btn-secondary" @click="showRegisterModal = true">注册</button>
+                    </div>
+                    <div v-else>
+                        <span>欢迎，{{ currentUser.username }}</span>
+                        <button class="btn btn-secondary" @click="logout">退出</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 主要内容 -->
+            <div class="main-content">
+                <!-- 商品市场 -->
+                <div v-if="activeTab === 'market'">
+                    <div class="card">
+                        <div class="search-bar">
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                placeholder="搜索商品..." 
+                                v-model="searchKeyword"
+                                @input="filterProducts"
+                            >
+                            <select class="form-control" v-model="filterCategory" @change="filterProducts">
+                                <option value="">所有分类</option>
+                                <option value="electronics">数码电子</option>
+                                <option value="books">图书教材</option>
+                                <option value="sports">运动用品</option>
+                                <option value="daily">生活用品</option>
+                                <option value="others">其他</option>
+                            </select>
+                            <button class="btn btn-primary" @click="loadProducts" :disabled="loadingProducts">
+                                {{ loadingProducts ? '加载中...' : '刷新' }}
+                            </button>
+                        </div>
+                    </div>
+
+                    <div v-if="loadingProducts" class="loading">
+                        加载中...
+                    </div>
+
+                    <div v-else-if="filteredProducts.length === 0" class="empty">
+                        暂无商品
+                    </div>
+
+                    <div v-else class="product-grid">
+                        <div v-for="product in filteredProducts" :key="product.id" class="product-card">
+                            <div class="product-image">
+                                📱 暂无图片
+                            </div>
+                            <div class="product-info">
+                                <div class="product-title">{{ product.title }}</div>
+                                <div class="product-price">¥{{ product.price }}</div>
+                                <div class="product-desc">{{ product.description }}</div>
+                                <div class="product-meta">
+                                    <span class="tag" :class="'tag-' + product.category">
+                                        {{ getCategoryName(product.category) }}
+                                    </span>
+                                    <span class="tag" :class="product.status === 'AVAILABLE' ? 'status-available' : 'status-sold'">
+                                        {{ product.status === 'AVAILABLE' ? '在售' : '已售' }}
+                                    </span>
+                                </div>
+                                <div style="margin-bottom: 15px; font-size: 12px; color: #999;">
+                                    发布者: {{ product.seller?.username || '未知' }} | {{ formatDate(product.createdAt) }}
+                                </div>
+                                <button 
+                                    class="btn btn-primary" 
+                                    @click="contactSeller(product)"
+                                    :disabled="!isLoggedIn || (currentUser && product.seller?.id === currentUser.id)"
+                                >
+                                    {{ !isLoggedIn ? '请先登录' : (currentUser && product.seller?.id === currentUser.id) ? '我的商品' : '联系卖家' }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 发布商品 -->
+                <div v-if="activeTab === 'publish' && isLoggedIn" class="card">
+                    <h3>发布新商品</h3>
+                    <div v-if="publishMessage" class="alert" :class="publishMessageType">
+                        {{ publishMessage }}
+                    </div>
+                    <form @submit.prevent="publishProduct">
+                        <div class="form-group">
+                            <label>商品名称 *</label>
+                            <input type="text" class="form-control" v-model="productForm.title" required>
+                        </div>
+                        <div class="form-group">
+                            <label>价格 *</label>
+                            <input type="number" class="form-control" v-model="productForm.price" min="0" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label>分类 *</label>
+                            <select class="form-control" v-model="productForm.category" required>
+                                <option value="">请选择分类</option>
+                                <option value="electronics">数码电子</option>
+                                <option value="books">图书教材</option>
+                                <option value="sports">运动用品</option>
+                                <option value="daily">生活用品</option>
+                                <option value="others">其他</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>商品描述 *</label>
+                            <textarea class="form-control" v-model="productForm.description" rows="4" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary" :disabled="publishLoading">
+                            {{ publishLoading ? '发布中...' : '发布商品' }}
+                        </button>
+                        <button type="button" class="btn btn-secondary" @click="resetProductForm">重置</button>
+                    </form>
+                </div>
+
+                <!-- 我的消息 -->
+                <div v-if="activeTab === 'messages' && isLoggedIn" class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3>我的消息</h3>
+                        <button class="btn btn-primary" @click="loadMessages" :disabled="loadingMessages">
+                            {{ loadingMessages ? '加载中...' : '刷新' }}
+                        </button>
+                    </div>
+
+                    <div v-if="loadingMessages" class="loading">
+                        加载中...
+                    </div>
+
+                    <div v-else-if="messages.length === 0" class="empty">
+                        暂无消息
+                    </div>
+
+                    <div v-else class="message-list">
+                        <div v-for="message in messages" :key="message.id" 
+                             class="message-item" 
+                             :class="message.sender.id === currentUser.id ? 'message-sent' : 'message-received'">
+                            <div class="message-header">
+                                <span>
+                                    {{ message.sender.id === currentUser.id ? '发送给: ' + message.receiver.username : '来自: ' + message.sender.username }}
+                                </span>
+                                <span>{{ formatDate(message.createdAt) }}</span>
+                            </div>
+                            <div>{{ message.content }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 登录模态框 -->
+            <div v-if="showLoginModal" class="modal" @click.self="showLoginModal = false">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>用户登录</h3>
+                        <button class="close-btn" @click="showLoginModal = false">&times;</button>
+                    </div>
+                    <div v-if="loginMessage" class="alert" :class="loginMessageType">
+                        {{ loginMessage }}
+                    </div>
+                    <form @submit.prevent="login">
+                        <div class="form-group">
+                            <label>用户名</label>
+                            <input type="text" class="form-control" v-model="loginForm.username" required>
+                        </div>
+                        <div class="form-group">
+                            <label>密码</label>
+                            <input type="password" class="form-control" v-model="loginForm.password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary" :disabled="loginLoading">
+                            {{ loginLoading ? '登录中...' : '登录' }}
+                        </button>
+                        <button type="button" class="btn btn-secondary" @click="showLoginModal = false">取消</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 注册模态框 -->
+            <div v-if="showRegisterModal" class="modal" @click.self="showRegisterModal = false">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>用户注册</h3>
+                        <button class="close-btn" @click="showRegisterModal = false">&times;</button>
+                    </div>
+                    <div v-if="registerMessage" class="alert" :class="registerMessageType">
+                        {{ registerMessage }}
+                    </div>
+                    <form @submit.prevent="register">
+                        <div class="form-group">
+                            <label>用户名</label>
+                            <input type="text" class="form-control" v-model="registerForm.username" required>
+                        </div>
+                        <div class="form-group">
+                            <label>邮箱</label>
+                            <input type="email" class="form-control" v-model="registerForm.email" required>
+                        </div>
+                        <div class="form-group">
+                            <label>密码</label>
+                            <input type="password" class="form-control" v-model="registerForm.password" required>
+                        </div>
+                        <div class="form-group">
+                            <label>手机号</label>
+                            <input type="tel" class="form-control" v-model="registerForm.phone">
+                        </div>
+                        <button type="submit" class="btn btn-primary" :disabled="registerLoading">
+                            {{ registerLoading ? '注册中...' : '注册' }}
+                        </button>
+                        <button type="button" class="btn btn-secondary" @click="showRegisterModal = false">取消</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 联系卖家模态框 -->
+            <div v-if="showContactModal" class="modal" @click.self="showContactModal = false">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>联系卖家</h3>
+                        <button class="close-btn" @click="showContactModal = false">&times;</button>
+                    </div>
+                    <div v-if="selectedProduct">
+                        <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                            <h4>{{ selectedProduct.title }}</h4>
+                            <p>价格: ¥{{ selectedProduct.price }}</p>
+                            <p>卖家: {{ selectedProduct.seller.username }}</p>
+                        </div>
+                        <div v-if="contactMessage" class="alert" :class="contactMessageType">
+                            {{ contactMessage }}
+                        </div>
+                        <form @submit.prevent="sendMessage">
+                            <div class="form-group">
+                                <label>消息内容</label>
+                                <textarea class="form-control" v-model="messageContent" rows="4" required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary" :disabled="sendingMessage">
+                                {{ sendingMessage ? '发送中...' : '发送消息' }}
+                            </button>
+                            <button type="button" class="btn btn-secondary" @click="showContactModal = false">取消</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vue 3 CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script>
+        const { createApp, ref, reactive, computed, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                // API基础URL
+                const API_BASE = 'http://localhost:8080/api';
+                
+                // 响应式数据
+                const activeTab = ref('market');
+                const isLoggedIn = ref(false);
+                const currentUser = ref(null);
+                const currentToken = ref('');
+                
+                // 模态框控制
+                const showLoginModal = ref(false);
+                const showRegisterModal = ref(false);
+                const showContactModal = ref(false);
+                
+                // 加载状态
+                const loginLoading = ref(false);
+                const registerLoading = ref(false);
+                const loadingProducts = ref(false);
+                const loadingMessages = ref(false);
+                const publishLoading = ref(false);
+                const sendingMessage = ref(false);
+                
+                // 消息状态
+                const loginMessage = ref('');
+                const loginMessageType = ref('');
+                const registerMessage = ref('');
+                const registerMessageType = ref('');
+                const publishMessage = ref('');
+                const publishMessageType = ref('');
+                const contactMessage = ref('');
+                const contactMessageType = ref('');
+                
+                // 表单数据
+                const loginForm = reactive({
+                    username: 'testuser',
+                    password: '123456'
+                });
+                
+                const registerForm = reactive({
+                    username: '',
+                    email: '',
+                    password: '',
+                    phone: ''
+                });
+                
+                const productForm = reactive({
+                    title: '',
+                    description: '',
+                    price: 0,
+                    category: ''
+                });
+                
+                // 数据列表
+                const products = ref([]);
+                const messages = ref([]);
+                
+                // 搜索和筛选
+                const searchKeyword = ref('');
+                const filterCategory = ref('');
+                const filteredProducts = ref([]);
+                
+                // 联系卖家
+                const selectedProduct = ref(null);
+                const messageContent = ref('');
+                
+                // 方法
+                const setActiveTab = (tab) => {
+                    activeTab.value = tab;
+                    if (tab === 'messages') {
+                        loadMessages();
+                    }
+                };
+                
+                const showMessage = (message, type, target) => {
+                    if (target === 'login') {
+                        loginMessage.value = message;
+                        loginMessageType.value = type === 'success' ? 'alert-success' : 'alert-error';
+                        setTimeout(() => { loginMessage.value = ''; }, 3000);
+                    } else if (target === 'register') {
+                        registerMessage.value = message;
+                        registerMessageType.value = type === 'success' ? 'alert-success' : 'alert-error';
+                        setTimeout(() => { registerMessage.value = ''; }, 3000);
+                    } else if (target === 'publish') {
+                        publishMessage.value = message;
+                        publishMessageType.value = type === 'success' ? 'alert-success' : 'alert-error';
+                        setTimeout(() => { publishMessage.value = ''; }, 3000);
+                    } else if (target === 'contact') {
+                        contactMessage.value = message;
+                        contactMessageType.value = type === 'success' ? 'alert-success' : 'alert-error';
+                        setTimeout(() => { contactMessage.value = ''; }, 3000);
+                    }
+                };
+                
+                const login = async () => {
+                    loginLoading.value = true;
+                    try {
+                        const response = await fetch(`${API_BASE}/auth/login`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(loginForm)
+                        });
+                        
+                        const data = await response.json();
+                        console.log('登录响应:', data);
+                        
+                        if (response.ok && data.data && data.data.token) {
+                            currentToken.value = data.data.token;
+                            currentUser.value = data.data.user;
+                            isLoggedIn.value = true;
+                            showLoginModal.value = false;
+                            localStorage.setItem('token', data.data.token);
+                            localStorage.setItem('user', JSON.stringify(data.data.user));
+                            showMessage('登录成功！', 'success', 'login');
+                            loadProducts();
+                        } else {
+                            showMessage(data.message || '登录失败', 'error', 'login');
+                        }
+                    } catch (error) {
+                        console.error('登录错误:', error);
+                        showMessage('网络错误：' + error.message, 'error', 'login');
+                    } finally {
+                        loginLoading.value = false;
+                    }
+                };
+                
+                const register = async () => {
+                    registerLoading.value = true;
+                    try {
+                        const response = await fetch(`${API_BASE}/auth/register`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(registerForm)
+                        });
+                        
+                        const data = await response.json();
+                        console.log('注册响应:', data);
+                        
+                        if (response.ok) {
+                            showMessage('注册成功！请登录', 'success', 'register');
+                            setTimeout(() => {
+                                showRegisterModal.value = false;
+                                showLoginModal.value = true;
+                            }, 1500);
+                        } else {
+                            showMessage(data.message || '注册失败', 'error', 'register');
+                        }
+                    } catch (error) {
+                        console.error('注册错误:', error);
+                        showMessage('网络错误：' + error.message, 'error', 'register');
+                    } finally {
+                        registerLoading.value = false;
+                    }
+                };
+                
+                const logout = () => {
+                    isLoggedIn.value = false;
+                    currentUser.value = null;
+                    currentToken.value = '';
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    activeTab.value = 'market';
+                };
+                
+                const loadProducts = async () => {
+                    loadingProducts.value = true;
+                    try {                        const response = await fetch(`${API_BASE}/products`);
+                        const data = await response.json();
+                        console.log('商品列表响应:', data);
+                        
+                        if (response.ok && data.data && data.data.content) {
+                            products.value = data.data.content;
+                            filterProducts();
+                        } else {
+                            console.error('加载商品失败:', data.message);
+                        }
+                    } catch (error) {
+                        console.error('加载商品错误:', error);
+                    } finally {
+                        loadingProducts.value = false;
+                    }
+                };
+                
+                const filterProducts = () => {
+                    let result = [...products.value];
+                    
+                    // 关键词搜索
+                    if (searchKeyword.value) {
+                        const keyword = searchKeyword.value.toLowerCase();
+                        result = result.filter(product => 
+                            product.title.toLowerCase().includes(keyword) ||
+                            product.description.toLowerCase().includes(keyword)
+                        );
+                    }
+                    
+                    // 分类筛选
+                    if (filterCategory.value) {
+                        result = result.filter(product => product.category === filterCategory.value);
+                    }
+                    
+                    // 按时间排序（最新优先）
+                    result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                    
+                    filteredProducts.value = result;
+                };
+                
+                const publishProduct = async () => {
+                    publishLoading.value = true;
+                    try {
+                        const response = await fetch(`${API_BASE}/products`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${currentToken.value}`
+                            },
+                            body: JSON.stringify(productForm)
+                        });
+                        
+                        const data = await response.json();
+                        console.log('发布商品响应:', data);
+                        
+                        if (response.ok) {
+                            showMessage('商品发布成功！', 'success', 'publish');
+                            resetProductForm();
+                            loadProducts();
+                            setTimeout(() => {
+                                activeTab.value = 'market';
+                            }, 1500);
+                        } else {
+                            showMessage(data.message || '发布失败', 'error', 'publish');
+                        }
+                    } catch (error) {
+                        console.error('发布商品错误:', error);
+                        showMessage('网络错误：' + error.message, 'error', 'publish');
+                    } finally {
+                        publishLoading.value = false;
+                    }
+                };
+                
+                const resetProductForm = () => {
+                    Object.assign(productForm, {
+                        title: '',
+                        description: '',
+                        price: 0,
+                        category: ''
+                    });
+                };
+                
+                const loadMessages = async () => {
+                    if (!isLoggedIn.value) return;
+                    
+                    loadingMessages.value = true;
+                    try {
+                        const response = await fetch(`${API_BASE}/messages/my`, {
+                            headers: {
+                                'Authorization': `Bearer ${currentToken.value}`
+                            }
+                        });
+                        
+                        const data = await response.json();
+                        console.log('消息列表响应:', data);
+                        
+                        if (response.ok && data.data) {
+                            messages.value = data.data;
+                        } else {
+                            console.error('加载消息失败:', data.message);
+                        }
+                    } catch (error) {
+                        console.error('加载消息错误:', error);
+                    } finally {
+                        loadingMessages.value = false;
+                    }
+                };
+                
+                const contactSeller = (product) => {
+                    if (!isLoggedIn.value) {
+                        showLoginModal.value = true;
+                        return;
+                    }
+                    
+                    selectedProduct.value = product;
+                    messageContent.value = `你好，我对你的商品"${product.title}"感兴趣，请问还在出售吗？`;
+                    showContactModal.value = true;
+                };
+                
+                const sendMessage = async () => {
+                    if (!messageContent.value.trim()) {
+                        showMessage('请输入消息内容', 'error', 'contact');
+                        return;
+                    }
+                    
+                    sendingMessage.value = true;
+                    try {                        const response = await fetch(`${API_BASE}/messages`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${currentToken.value}`
+                            },
+                            body: JSON.stringify({
+                                recipientUsername: selectedProduct.value.seller.username,
+                                content: messageContent.value
+                            })
+                        });
+                        
+                        const data = await response.json();
+                        console.log('发送消息响应:', data);
+                        
+                        if (response.ok) {
+                            showMessage('消息发送成功！', 'success', 'contact');
+                            setTimeout(() => {
+                                showContactModal.value = false;
+                                messageContent.value = '';
+                            }, 1500);
+                        } else {
+                            showMessage(data.message || '发送失败', 'error', 'contact');
+                        }
+                    } catch (error) {
+                        console.error('发送消息错误:', error);
+                        showMessage('网络错误：' + error.message, 'error', 'contact');
+                    } finally {
+                        sendingMessage.value = false;
+                    }
+                };
+                
+                // 工具方法
+                const getCategoryName = (category) => {
+                    const categoryMap = {
+                        'electronics': '数码电子',
+                        'books': '图书教材',
+                        'sports': '运动用品',
+                        'daily': '生活用品',
+                        'others': '其他'
+                    };
+                    return categoryMap[category] || category;
+                };
+                
+                const formatDate = (dateString) => {
+                    return new Date(dateString).toLocaleString('zh-CN');
+                };
+                
+                // 页面加载时的初始化
+                onMounted(() => {
+                    // 尝试从localStorage恢复登录状态
+                    const savedToken = localStorage.getItem('token');
+                    const savedUser = localStorage.getItem('user');
+                    
+                    if (savedToken && savedUser) {
+                        try {
+                            currentToken.value = savedToken;
+                            currentUser.value = JSON.parse(savedUser);
+                            isLoggedIn.value = true;
+                        } catch (error) {
+                            console.error('恢复用户状态失败:', error);
+                            localStorage.removeItem('token');
+                            localStorage.removeItem('user');
+                        }
+                    }
+                    
+                    // 加载商品列表
+                    loadProducts();
+                });
+                
+                return {
+                    // 响应式数据
+                    activeTab,
+                    isLoggedIn,
+                    currentUser,
+                    showLoginModal,
+                    showRegisterModal,
+                    showContactModal,
+                    loginLoading,
+                    registerLoading,
+                    loadingProducts,
+                    loadingMessages,
+                    publishLoading,
+                    sendingMessage,
+                    
+                    // 消息状态
+                    loginMessage,
+                    loginMessageType,
+                    registerMessage,
+                    registerMessageType,
+                    publishMessage,
+                    publishMessageType,
+                    contactMessage,
+                    contactMessageType,
+                    
+                    // 表单数据
+                    loginForm,
+                    registerForm,
+                    productForm,
+                    
+                    // 数据列表
+                    products,
+                    messages,
+                    filteredProducts,
+                    
+                    // 搜索筛选
+                    searchKeyword,
+                    filterCategory,
+                    
+                    // 联系卖家
+                    selectedProduct,
+                    messageContent,
+                    
+                    // 方法
+                    setActiveTab,
+                    login,
+                    register,
+                    logout,
+                    loadProducts,
+                    filterProducts,
+                    publishProduct,
+                    resetProductForm,
+                    loadMessages,
+                    contactSeller,
+                    sendMessage,
+                    getCategoryName,
+                    formatDate
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

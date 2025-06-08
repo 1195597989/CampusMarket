@@ -25,9 +25,7 @@ public class MessageController {
     private MessageService messageService;
 
     @Autowired
-    private UserService userService;
-
-    /**
+    private UserService userService;    /**
      * 创建留言
      */
     @PostMapping("/product/{productId}")
@@ -47,6 +45,28 @@ public class MessageController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                 .body(ApiResponse.error("留言发送失败：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 直接发送消息给用户
+     */
+    @PostMapping
+    public ResponseEntity<ApiResponse<Message>> sendDirectMessage(
+            @Valid @RequestBody MessageCreateDto messageDto,
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        try {
+            Optional<User> senderOptional = userService.findByUsername(userPrincipal.getUsername());
+            if (senderOptional.isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("发送者不存在", 400));
+            }
+
+            Message message = messageService.sendDirectMessage(messageDto, senderOptional.get());
+            return ResponseEntity.ok(ApiResponse.success("消息发送成功", message));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                .body(ApiResponse.error("消息发送失败：" + e.getMessage()));
         }
     }
 

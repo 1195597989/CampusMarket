@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>消息功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .auth-section {
+            background: #e3f2fd;
+        }
+        .message-section {
+            background: #f3e5f5;
+        }
+        button {
+            margin: 5px;
+            padding: 10px 15px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 3px;
+            background: #f8f9fa;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .token-display {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+            word-break: break-all;
+        }
+        input, textarea {
+            margin: 5px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+        textarea {
+            width: 300px;
+            height: 60px;
+        }
+    </style>
+</head>
+<body>
+    <h1>校园二手交易平台 - 消息功能测试</h1>
+    
+    <!-- 认证部分 -->
+    <div class="test-section auth-section">
+        <h2>用户认证</h2>
+        <button onclick="loginTestUser()">登录测试用户</button>
+        <button onclick="loginAsStudent1()">登录student1</button>
+        <button onclick="loginAsStudent2()">登录student2</button>
+        <div id="authResult" class="result"></div>
+        <div id="tokenDisplay" class="token-display" style="display: none;">
+            当前Token: <span id="currentToken"></span>
+        </div>
+    </div>
+
+    <!-- 产品留言测试 -->
+    <div class="test-section message-section">
+        <h2>产品留言功能</h2>
+        <div>
+            产品ID: <input type="number" id="productId" value="1" />
+            留言内容: <textarea id="productMessageContent" placeholder="请输入留言内容...">这个产品看起来不错，还在出售吗？</textarea>
+        </div>
+        <button onclick="sendProductMessage()">发送产品留言</button>
+        <button onclick="getProductMessages()">获取产品留言</button>
+        <div id="productMessageResult" class="result"></div>
+    </div>
+
+    <!-- 直接消息测试 -->
+    <div class="test-section message-section">
+        <h2>直接消息功能</h2>
+        <div>
+            接收者用户名: <input type="text" id="recipientUsername" value="student1" />
+            消息内容: <textarea id="directMessageContent" placeholder="请输入消息内容...">你好，我对你的商品很感兴趣</textarea>
+        </div>
+        <button onclick="sendDirectMessage()">发送直接消息</button>
+        <div id="directMessageResult" class="result"></div>
+    </div>
+
+    <!-- 我的消息 -->
+    <div class="test-section message-section">
+        <h2>我的消息</h2>
+        <button onclick="getMyMessages()">获取我的消息</button>
+        <div id="myMessageResult" class="result"></div>
+    </div>
+
+    <!-- 消息管理 -->
+    <div class="test-section message-section">
+        <h2>消息管理</h2>
+        <div>
+            消息ID: <input type="number" id="messageId" value="" placeholder="要删除的消息ID" />
+        </div>
+        <button onclick="deleteMessage()">删除消息</button>
+        <div id="deleteMessageResult" class="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+        let currentToken = '';
+
+        function showResult(elementId, content, isError = false) {
+            const element = document.getElementById(elementId);
+            element.textContent = content;
+            element.className = isError ? 'result error' : 'result success';
+        }
+
+        function updateTokenDisplay(token) {
+            currentToken = token;
+            document.getElementById('currentToken').textContent = token;
+            document.getElementById('tokenDisplay').style.display = token ? 'block' : 'none';
+        }
+
+        function getAuthHeaders() {
+            return {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'Authorization': currentToken ? `Bearer ${currentToken}` : ''
+            };
+        }
+
+        async function loginTestUser() {
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: 'testuser',
+                        password: '123456'
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    updateTokenDisplay(data.data.token);
+                    showResult('authResult', 
+                        `登录成功！\n` +
+                        `用户: ${data.data.user.username}\n` +
+                        `邮箱: ${data.data.user.email}\n` +
+                        `Token已保存`
+                    );
+                } else {
+                    showResult('authResult', `登录失败: ${data.message || '未知错误'}`, true);
+                }
+            } catch (error) {
+                showResult('authResult', `登录错误: ${error.message}`, true);
+            }
+        }
+
+        async function loginAsStudent1() {
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: 'student1',
+                        password: 'password123'
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    updateTokenDisplay(data.data.token);
+                    showResult('authResult', 
+                        `登录成功！\n` +
+                        `用户: ${data.data.user.username}\n` +
+                        `邮箱: ${data.data.user.email}\n` +
+                        `Token已保存`
+                    );
+                } else {
+                    showResult('authResult', `登录失败: ${data.message || '未知错误'}`, true);
+                }
+            } catch (error) {
+                showResult('authResult', `登录错误: ${error.message}`, true);
+            }
+        }
+
+        async function loginAsStudent2() {
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: 'student2',
+                        password: 'password123'
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    updateTokenDisplay(data.data.token);
+                    showResult('authResult', 
+                        `登录成功！\n` +
+                        `用户: ${data.data.user.username}\n` +
+                        `邮箱: ${data.data.user.email}\n` +
+                        `Token已保存`
+                    );
+                } else {
+                    showResult('authResult', `登录失败: ${data.message || '未知错误'}`, true);
+                }
+            } catch (error) {
+                showResult('authResult', `登录错误: ${error.message}`, true);
+            }
+        }
+
+        async function sendProductMessage() {
+            if (!currentToken) {
+                showResult('productMessageResult', '请先登录！', true);
+                return;
+            }
+
+            try {
+                const productId = document.getElementById('productId').value;
+                const content = document.getElementById('productMessageContent').value;
+
+                if (!productId || !content) {
+                    showResult('productMessageResult', '请填写产品ID和留言内容！', true);
+                    return;
+                }
+
+                const response = await fetch(`${API_BASE}/messages/product/${productId}`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({
+                        content: content
+                    })
+                });
+
+                const data = await response.json();
+                
+                showResult('productMessageResult', 
+                    `状态: ${response.status}\n` +
+                    `响应: ${JSON.stringify(data, null, 2)}`
+                    , !response.ok
+                );
+            } catch (error) {
+                showResult('productMessageResult', `错误: ${error.message}`, true);
+            }
+        }
+
+        async function getProductMessages() {
+            try {
+                const productId = document.getElementById('productId').value;
+
+                if (!productId) {
+                    showResult('productMessageResult', '请填写产品ID！', true);
+                    return;
+                }
+
+                const response = await fetch(`${API_BASE}/messages/product/${productId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                
+                showResult('productMessageResult', 
+                    `状态: ${response.status}\n` +
+                    `产品${productId}的留言:\n` +
+                    `${JSON.stringify(data, null, 2)}`
+                    , !response.ok
+                );
+            } catch (error) {
+                showResult('productMessageResult', `错误: ${error.message}`, true);
+            }
+        }
+
+        async function sendDirectMessage() {
+            if (!currentToken) {
+                showResult('directMessageResult', '请先登录！', true);
+                return;
+            }
+
+            try {
+                const recipientUsername = document.getElementById('recipientUsername').value;
+                const content = document.getElementById('directMessageContent').value;
+
+                if (!recipientUsername || !content) {
+                    showResult('directMessageResult', '请填写接收者用户名和消息内容！', true);
+                    return;
+                }
+
+                const response = await fetch(`${API_BASE}/messages`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({
+                        content: content,
+                        recipientUsername: recipientUsername
+                    })
+                });
+
+                const data = await response.json();
+                
+                showResult('directMessageResult', 
+                    `状态: ${response.status}\n` +
+                    `响应: ${JSON.stringify(data, null, 2)}`
+                    , !response.ok
+                );
+            } catch (error) {
+                showResult('directMessageResult', `错误: ${error.message}`, true);
+            }
+        }
+
+        async function getMyMessages() {
+            if (!currentToken) {
+                showResult('myMessageResult', '请先登录！', true);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/messages/my`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+
+                const data = await response.json();
+                
+                showResult('myMessageResult', 
+                    `状态: ${response.status}\n` +
+                    `我的消息:\n` +
+                    `${JSON.stringify(data, null, 2)}`
+                    , !response.ok
+                );
+            } catch (error) {
+                showResult('myMessageResult', `错误: ${error.message}`, true);
+            }
+        }
+
+        async function deleteMessage() {
+            if (!currentToken) {
+                showResult('deleteMessageResult', '请先登录！', true);
+                return;
+            }
+
+            try {
+                const messageId = document.getElementById('messageId').value;
+
+                if (!messageId) {
+                    showResult('deleteMessageResult', '请填写要删除的消息ID！', true);
+                    return;
+                }
+
+                const response = await fetch(`${API_BASE}/messages/${messageId}`, {
+                    method: 'DELETE',
+                    headers: getAuthHeaders()
+                });
+
+                const data = await response.json();
+                
+                showResult('deleteMessageResult', 
+                    `状态: ${response.status}\n` +
+                    `响应: ${JSON.stringify(data, null, 2)}`
+                    , !response.ok
+                );
+            } catch (error) {
+                showResult('deleteMessageResult', `错误: ${error.message}`, true);
+            }
+        }
+
+        // 页面加载时显示说明
+        window.addEventListener('DOMContentLoaded', () => {
+            showResult('authResult', '请先登录以测试消息功能\n可以选择登录 testuser、student1 或 student2');
+        });
+    </script>
+</body>
+</html>

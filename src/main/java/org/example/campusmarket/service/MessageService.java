@@ -6,6 +6,7 @@ import org.example.campusmarket.entity.Product;
 import org.example.campusmarket.entity.User;
 import org.example.campusmarket.repository.MessageRepository;
 import org.example.campusmarket.repository.ProductRepository;
+import org.example.campusmarket.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -13,15 +14,14 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-public class MessageService {
-
-    @Autowired
+public class MessageService {    @Autowired
     private MessageRepository messageRepository;
 
     @Autowired
     private ProductRepository productRepository;
 
-    /**
+    @Autowired
+    private UserRepository userRepository;    /**
      * 创建留言
      */
     public Message createMessage(Long productId, MessageCreateDto messageDto, User user) {
@@ -35,6 +35,32 @@ public class MessageService {
             return messageRepository.save(message);
         }
         throw new RuntimeException("商品不存在");
+    }
+
+    /**
+     * 发送直接消息给指定用户
+     */
+    public Message sendDirectMessage(MessageCreateDto messageDto, User sender) {
+        if (messageDto.getRecipientUsername() == null || messageDto.getRecipientUsername().trim().isEmpty()) {
+            throw new RuntimeException("接收者用户名不能为空");
+        }
+        
+        Optional<User> recipientOptional = userRepository.findByUsername(messageDto.getRecipientUsername());
+        if (recipientOptional.isEmpty()) {
+            throw new RuntimeException("接收者用户不存在");
+        }
+        
+        User recipient = recipientOptional.get();
+        if (sender.getId().equals(recipient.getId())) {
+            throw new RuntimeException("不能给自己发送消息");
+        }
+        
+        Message message = new Message();
+        message.setUser(sender);
+        message.setRecipient(recipient);
+        message.setContent(messageDto.getContent());
+        // product 为 null，表示这是直接消息
+        return messageRepository.save(message);
     }
 
     /**

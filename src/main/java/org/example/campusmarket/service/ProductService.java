@@ -25,9 +25,7 @@ public class ProductService {
     @Autowired
     private ProductRepository productRepository;
 
-    private final String uploadDir = "uploads/products/";
-
-    /**
+    private final String uploadDir = "uploads/products/";    /**
      * 创建商品
      */
     public Product createProduct(ProductCreateDto productDto, User user, MultipartFile imageFile) throws IOException {
@@ -43,6 +41,9 @@ public class ProductService {
         if (imageFile != null && !imageFile.isEmpty()) {
             String imageUrl = saveImage(imageFile);
             product.setImageUrl(imageUrl);
+        } else if (productDto.getImageUrl() != null && !productDto.getImageUrl().trim().isEmpty()) {
+            // 如果没有上传文件但提供了图片URL，则使用URL
+            product.setImageUrl(productDto.getImageUrl().trim());
         }
 
         return productRepository.save(product);
