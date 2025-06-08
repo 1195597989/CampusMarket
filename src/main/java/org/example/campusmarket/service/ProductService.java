@@ -1,6 +1,7 @@
 package org.example.campusmarket.service;
 
 import org.example.campusmarket.dto.ProductCreateDto;
+import org.example.campusmarket.dto.ProductUpdateDto;
 import org.example.campusmarket.entity.Product;
 import org.example.campusmarket.entity.User;
 import org.example.campusmarket.repository.ProductRepository;
@@ -102,13 +103,11 @@ public class ProductService {
      */
     public Optional<Product> getProductById(Long id) {
         return productRepository.findById(id);
-    }
-
-    /**
-     * 获取用户的商品
+    }    /**
+     * 获取用户的商品（排除已删除的）
      */
     public List<Product> getUserProducts(User user) {
-        return productRepository.findByUserOrderByCreatedAtDesc(user);
+        return productRepository.findByUserAndStatusNotOrderByCreatedAtDesc(user, Product.ProductStatus.REMOVED);
     }
 
     /**
@@ -125,25 +124,21 @@ public class ProductService {
             }
         }
         return false;
-    }
-
-    /**
-     * 删除商品
+    }    /**
+     * 删除商品 - 真正从数据库删除
      */
     public boolean deleteProduct(Long productId, String username) {
         Optional<Product> productOptional = productRepository.findById(productId);
         if (productOptional.isPresent()) {
             Product product = productOptional.get();
             if (product.getUser().getUsername().equals(username)) {
-                product.setStatus(Product.ProductStatus.REMOVED);
-                productRepository.save(product);
+                // 真正删除商品，而不是仅设置状态
+                productRepository.delete(product);
                 return true;
             }
         }
         return false;
-    }
-
-    /**
+    }    /**
      * 更新商品信息
      */
     public Product updateProduct(Long productId, ProductCreateDto productDto, String username) {
@@ -155,6 +150,33 @@ public class ProductService {
                 product.setDescription(productDto.getDescription());
                 product.setPrice(productDto.getPrice());
                 product.setCategory(productDto.getCategory());
+                if (productDto.getImageUrl() != null) {
+                    product.setImageUrl(productDto.getImageUrl());
+                }
+                return productRepository.save(product);
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * 更新商品信息（包括状态）
+     */
+    public Product updateProductWithStatus(Long productId, ProductUpdateDto productDto, String username) {
+        Optional<Product> productOptional = productRepository.findById(productId);
+        if (productOptional.isPresent()) {
+            Product product = productOptional.get();
+            if (product.getUser().getUsername().equals(username)) {
+                product.setTitle(productDto.getTitle());
+                product.setDescription(productDto.getDescription());
+                product.setPrice(productDto.getPrice());
+                product.setCategory(productDto.getCategory());
+                if (productDto.getImageUrl() != null) {
+                    product.setImageUrl(productDto.getImageUrl());
+                }
+                if (productDto.getStatus() != null) {
+                    product.setStatus(productDto.getStatus());
+                }
                 return productRepository.save(product);
             }
         }

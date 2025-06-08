@@ -13,11 +13,15 @@ import java.util.List;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
-    
-    /**
+      /**
      * 根据用户查找商品
      */
     List<Product> findByUserOrderByCreatedAtDesc(User user);
+    
+    /**
+     * 根据用户查找有效商品（排除已删除状态）
+     */
+    List<Product> findByUserAndStatusNotOrderByCreatedAtDesc(User user, Product.ProductStatus status);
     
     /**
      * 根据分类查找商品

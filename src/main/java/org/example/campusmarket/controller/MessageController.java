@@ -1,5 +1,7 @@
 package org.example.campusmarket.controller;
 
+import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONObject;
 import jakarta.validation.Valid;
 import org.example.campusmarket.dto.ApiResponse;
 import org.example.campusmarket.dto.MessageCreateDto;
@@ -8,6 +10,7 @@ import org.example.campusmarket.entity.User;
 import org.example.campusmarket.security.UserPrincipal;
 import org.example.campusmarket.service.MessageService;
 import org.example.campusmarket.service.UserService;
+import org.example.campusmarket.util.JsonUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -102,6 +105,42 @@ public class MessageController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                 .body(ApiResponse.error("获取我的留言失败：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 获取我的留言 - JSON格式
+     */
+    @GetMapping("/my/json")
+    public ResponseEntity<String> getMyMessagesJson(
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        try {
+            Optional<User> userOptional = userService.findByUsername(userPrincipal.getUsername());
+            if (userOptional.isEmpty()) {
+                JSONObject error = new JSONObject();
+                error.set("success", false);
+                error.set("message", "用户不存在");
+                error.set("code", 400);
+                return ResponseEntity.badRequest().body(error.toString());
+            }
+
+            List<Message> messages = messageService.getUserMessages(userOptional.get());
+            JSONArray messagesJson = JsonUtils.messagesToJson(messages);
+            
+            JSONObject response = new JSONObject();
+            response.set("success", true);
+            response.set("message", "获取成功");
+            response.set("data", messagesJson);
+            
+            return ResponseEntity.ok()
+                .header("Content-Type", "application/json;charset=UTF-8")
+                .body(response.toString());
+        } catch (Exception e) {
+            JSONObject error = new JSONObject();
+            error.set("success", false);
+            error.set("message", "获取我的留言失败：" + e.getMessage());
+            error.set("code", 500);
+            return ResponseEntity.internalServerError().body(error.toString());
         }
     }
 

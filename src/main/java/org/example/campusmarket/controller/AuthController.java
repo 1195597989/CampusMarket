@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import org.example.campusmarket.dto.ApiResponse;
 import org.example.campusmarket.dto.UserLoginDto;
 import org.example.campusmarket.dto.UserRegistrationDto;
+import org.example.campusmarket.dto.UserProfileUpdateDto;
 import org.example.campusmarket.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -57,9 +58,7 @@ public class AuthController {
             return ResponseEntity.internalServerError()
                 .body(ApiResponse.error("登录失败：" + e.getMessage()));
         }
-    }
-
-    /**
+    }    /**
      * 修改密码
      */
     @PostMapping("/change-password")
@@ -79,6 +78,28 @@ public class AuthController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                 .body(ApiResponse.error("密码修改失败：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 更新个人信息
+     */
+    @PutMapping("/profile")
+    public ResponseEntity<ApiResponse<Object>> updateProfile(
+            @RequestParam String currentUsername,
+            @Valid @RequestBody UserProfileUpdateDto profileDto) {
+        try {
+            Map<String, Object> result = userService.updateUserProfile(currentUsername, profileDto);
+            
+            if ((Boolean) result.get("success")) {
+                return ResponseEntity.ok(ApiResponse.success(result.get("message").toString(), result));
+            } else {
+                return ResponseEntity.badRequest()
+                    .body(ApiResponse.error(result.get("message").toString(), 400));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                .body(ApiResponse.error("更新失败：" + e.getMessage()));
         }
     }
 }

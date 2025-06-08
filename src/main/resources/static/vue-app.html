@@ -328,9 +328,7 @@
                             </el-form-item>
                         </el-form>
                     </el-card>
-                </div>
-
-                <!-- 我的消息 -->
+                </div>                <!-- 我的消息 -->
                 <div v-if="activeTab === 'messages' && isLoggedIn">
                     <el-card>
                         <template #header>
@@ -357,9 +355,8 @@
                                     <el-card shadow="hover">
                                         <div style="margin-bottom: 10px;">
                                             <el-tag v-if="message.sender.id === currentUser.id" type="info">我发送的</el-tag>
-                                            <el-tag v-else type="success">收到的消息</el-tag>
-                                            <span style="margin-left: 10px; font-weight: bold;">
-                                                {{ message.sender.id === currentUser.id ? '发送给: ' + message.receiver.username : '来自: ' + message.sender.username }}
+                                            <el-tag v-else type="success">收到的消息</el-tag>                                            <span style="margin-left: 10px; font-weight: bold;">
+                                                {{ message.sender.id === currentUser.id ? '发送给: ' + (message.recipient ? message.recipient.username : '商品留言') : '来自: ' + message.sender.username }}
                                             </span>
                                         </div>
                                         <p>{{ message.content }}</p>
@@ -370,9 +367,174 @@
                         </div>
                     </el-card>
                 </div>
-            </div>
 
-            <!-- 联系卖家对话框 -->
+                <!-- 个人中心 -->
+                <div v-if="activeTab === 'profile' && isLoggedIn">
+                    <el-row :gutter="20">
+                        <!-- 个人信息卡片 -->
+                        <el-col :span="8">
+                            <el-card shadow="hover">
+                                <template #header>
+                                    <h3>个人信息</h3>
+                                </template>
+                                <div style="text-align: center; margin-bottom: 20px;">
+                                    <el-avatar :size="80" style="background-color: #409eff; font-size: 24px;">
+                                        {{ currentUser.username.charAt(0).toUpperCase() }}
+                                    </el-avatar>
+                                    <h3 style="margin: 10px 0;">{{ currentUser.username }}</h3>
+                                </div>
+                                <el-descriptions :column="1" border>
+                                    <el-descriptions-item label="用户名">{{ currentUser.username }}</el-descriptions-item>
+                                    <el-descriptions-item label="邮箱">{{ currentUser.email || '未设置' }}</el-descriptions-item>
+                                    <el-descriptions-item label="手机号">{{ currentUser.phone || '未设置' }}</el-descriptions-item>
+                                    <el-descriptions-item label="注册时间">{{ formatDate(currentUser.createdAt) }}</el-descriptions-item>
+                                </el-descriptions>
+                                <div style="margin-top: 20px;">
+                                    <el-button type="primary" @click="showEditProfile = true" style="width: 100%;">
+                                        <el-icon><Edit /></el-icon>
+                                        编辑个人信息
+                                    </el-button>
+                                </div>
+                            </el-card>
+
+                            <!-- 统计信息卡片 -->
+                            <el-card shadow="hover" style="margin-top: 20px;">
+                                <template #header>
+                                    <h3>我的统计</h3>
+                                </template>
+                                <el-row :gutter="20">
+                                    <el-col :span="12">
+                                        <div style="text-align: center;">
+                                            <div style="font-size: 24px; font-weight: bold; color: #409eff;">
+                                                {{ myProducts.length }}
+                                            </div>
+                                            <div style="color: #606266;">发布商品</div>
+                                        </div>
+                                    </el-col>
+                                    <el-col :span="12">
+                                        <div style="text-align: center;">
+                                            <div style="font-size: 24px; font-weight: bold; color: #67c23a;">
+                                                {{ messages.length }}
+                                            </div>
+                                            <div style="color: #606266;">消息数量</div>
+                                        </div>
+                                    </el-col>
+                                </el-row>
+                                <el-row :gutter="20" style="margin-top: 20px;">
+                                    <el-col :span="12">
+                                        <div style="text-align: center;">
+                                            <div style="font-size: 24px; font-weight: bold; color: #e6a23c;">
+                                                {{ myProducts.filter(p => p.status === 'AVAILABLE').length }}
+                                            </div>
+                                            <div style="color: #606266;">在售商品</div>
+                                        </div>
+                                    </el-col>
+                                    <el-col :span="12">
+                                        <div style="text-align: center;">
+                                            <div style="font-size: 24px; font-weight: bold; color: #f56c6c;">
+                                                {{ myProducts.filter(p => p.status === 'SOLD').length }}
+                                            </div>
+                                            <div style="color: #606266;">已售出</div>
+                                        </div>
+                                    </el-col>
+                                </el-row>
+                            </el-card>
+                        </el-col>
+
+                        <!-- 我的商品列表 -->
+                        <el-col :span="16">
+                            <el-card shadow="hover">
+                                <template #header>
+                                    <el-row justify="space-between">
+                                        <el-col :span="12">
+                                            <h3>我发布的商品</h3>
+                                        </el-col>
+                                        <el-col :span="12" style="text-align: right;">
+                                            <el-button type="primary" @click="loadMyProducts" :loading="loadingMyProducts">
+                                                <el-icon><Refresh /></el-icon>
+                                                刷新
+                                            </el-button>
+                                        </el-col>
+                                    </el-row>
+                                </template>
+
+                                <div v-loading="loadingMyProducts">
+                                    <el-table :data="myProducts" style="width: 100%;" empty-text="您还没有发布过商品">
+                                        <el-table-column prop="title" label="商品名称" min-width="150">
+                                            <template #default="scope">
+                                                <div style="display: flex; align-items: center;">
+                                                    <el-image 
+                                                        v-if="scope.row.imageUrl"
+                                                        :src="scope.row.imageUrl"
+                                                        style="width: 40px; height: 40px; margin-right: 10px; border-radius: 4px;"
+                                                        fit="cover"
+                                                    >
+                                                        <template #error>
+                                                            <div style="width: 40px; height: 40px; background: #f5f7fa; display: flex; align-items: center; justify-content: center; color: #909399; font-size: 12px;">
+                                                                无图
+                                                            </div>
+                                                        </template>
+                                                    </el-image>
+                                                    <div>{{ scope.row.title }}</div>
+                                                </div>
+                                            </template>
+                                        </el-table-column>
+                                        <el-table-column prop="price" label="价格" width="100">
+                                            <template #default="scope">
+                                                <span style="color: #f56c6c; font-weight: bold;">¥{{ scope.row.price }}</span>
+                                            </template>
+                                        </el-table-column>
+                                        <el-table-column prop="category" label="分类" width="100">
+                                            <template #default="scope">
+                                                <el-tag :type="getCategoryTagType(scope.row.category)" size="small">
+                                                    {{ scope.row.category }}
+                                                </el-tag>
+                                            </template>
+                                        </el-table-column>
+                                        <el-table-column prop="status" label="状态" width="80">
+                                            <template #default="scope">
+                                                <el-tag v-if="scope.row.status === 'AVAILABLE'" type="success" size="small">在售</el-tag>
+                                                <el-tag v-else type="info" size="small">已售出</el-tag>
+                                            </template>
+                                        </el-table-column>
+                                        <el-table-column prop="createdAt" label="发布时间" width="120">
+                                            <template #default="scope">
+                                                {{ formatDate(scope.row.createdAt) }}
+                                            </template>
+                                        </el-table-column>
+                                        <el-table-column label="操作" width="180">
+                                            <template #default="scope">
+                                                <el-button 
+                                                    type="primary" 
+                                                    size="small" 
+                                                    @click="editMyProduct(scope.row)"
+                                                >
+                                                    编辑
+                                                </el-button>
+                                                <el-button 
+                                                    v-if="scope.row.status === 'AVAILABLE'"
+                                                    type="warning" 
+                                                    size="small" 
+                                                    @click="markAsSold(scope.row)"
+                                                >
+                                                    标记为已售
+                                                </el-button>
+                                                <el-button 
+                                                    type="danger" 
+                                                    size="small" 
+                                                    @click="deleteMyProduct(scope.row)"
+                                                >
+                                                    删除
+                                                </el-button>
+                                            </template>
+                                        </el-table-column>
+                                    </el-table>
+                                </div>
+                            </el-card>
+                        </el-col>
+                    </el-row>
+                </div>
+            </div>            <!-- 联系卖家对话框 -->
             <el-dialog v-model="showContactDialog" title="联系卖家" width="500px">
                 <div v-if="selectedProduct">
                     <el-descriptions :column="1" border>
@@ -396,6 +558,101 @@
                     <el-button type="primary" @click="sendMessage" :loading="sendingMessage">发送消息</el-button>
                 </template>
             </el-dialog>
+
+            <!-- 编辑个人信息对话框 -->
+            <el-dialog v-model="showEditProfile" title="编辑个人信息" width="500px">
+                <el-form :model="profileForm" ref="profileFormRef" :rules="profileRules" label-width="80px">
+                    <el-form-item label="用户名" prop="username">
+                        <el-input v-model="profileForm.username" placeholder="请输入用户名"></el-input>
+                    </el-form-item>
+                    <el-form-item label="邮箱" prop="email">
+                        <el-input v-model="profileForm.email" placeholder="请输入邮箱"></el-input>
+                    </el-form-item>
+                    <el-form-item label="手机号" prop="phone">
+                        <el-input v-model="profileForm.phone" placeholder="请输入手机号"></el-input>
+                    </el-form-item>
+                </el-form>
+                <template #footer>
+                    <el-button @click="showEditProfile = false">取消</el-button>
+                    <el-button type="primary" @click="updateProfile" :loading="updatingProfile">保存</el-button>
+                </template>
+            </el-dialog>
+
+            <!-- 编辑商品对话框 -->
+            <el-dialog v-model="showEditProduct" title="编辑商品" width="600px">
+                <el-form :model="editProductForm" ref="editProductFormRef" :rules="productRules" label-width="100px">
+                    <el-row :gutter="20">
+                        <el-col :span="12">
+                            <el-form-item label="商品名称" prop="title">
+                                <el-input v-model="editProductForm.title" placeholder="请输入商品名称"></el-input>
+                            </el-form-item>
+                        </el-col>
+                        <el-col :span="12">
+                            <el-form-item label="价格" prop="price">
+                                <el-input-number 
+                                    v-model="editProductForm.price" 
+                                    :min="0" 
+                                    :precision="2"
+                                    style="width: 100%;"
+                                    placeholder="请输入价格"
+                                ></el-input-number>
+                            </el-form-item>
+                        </el-col>
+                    </el-row>
+                    <el-row :gutter="20">
+                        <el-col :span="12">
+                            <el-form-item label="分类" prop="category">
+                                <el-select v-model="editProductForm.category" placeholder="请选择分类" style="width: 100%;">
+                                    <el-option label="数码电子" value="数码电子"></el-option>
+                                    <el-option label="图书教材" value="图书教材"></el-option>
+                                    <el-option label="运动户外" value="运动户外"></el-option>
+                                    <el-option label="生活用品" value="生活用品"></el-option>
+                                    <el-option label="其他" value="其他"></el-option>
+                                </el-select>
+                            </el-form-item>
+                        </el-col>
+                        <el-col :span="12">
+                            <el-form-item label="状态">
+                                <el-select v-model="editProductForm.status" style="width: 100%;">
+                                    <el-option label="在售" value="AVAILABLE"></el-option>
+                                    <el-option label="已售出" value="SOLD"></el-option>
+                                </el-select>
+                            </el-form-item>
+                        </el-col>
+                    </el-row>
+                    <el-form-item label="商品描述" prop="description">
+                        <el-input 
+                            v-model="editProductForm.description" 
+                            type="textarea" 
+                            :rows="4"
+                            placeholder="请详细描述商品的状况、使用情况等..."
+                        ></el-input>
+                    </el-form-item>
+                    <el-form-item label="商品图片">
+                        <el-input 
+                            v-model="editProductForm.imageUrl" 
+                            placeholder="请输入图片链接（可选）"
+                        ></el-input>
+                        <div v-if="editProductForm.imageUrl" style="margin-top: 10px;">
+                            <el-image 
+                                :src="editProductForm.imageUrl"
+                                style="width: 100px; height: 100px; object-fit: cover;"
+                                fit="cover"
+                            >
+                                <template #error>
+                                    <div style="width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; background-color: #f5f7fa; color: #909399; font-size: 12px;">
+                                        图片预览失败
+                                    </div>
+                                </template>
+                            </el-image>
+                        </div>
+                    </el-form-item>
+                </el-form>
+                <template #footer>
+                    <el-button @click="showEditProduct = false">取消</el-button>
+                    <el-button type="primary" @click="updateProduct" :loading="updatingProduct">保存</el-button>
+                </template>
+            </el-dialog>
         </div>
     </div>
 
@@ -410,19 +667,23 @@
                 const isLoggedIn = ref(false);
                 const currentUser = ref(null);
                 const currentToken = ref('');
-                
-                // 对话框控制
+                  // 对话框控制
                 const showLogin = ref(false);
                 const showRegister = ref(false);
                 const showContactDialog = ref(false);
+                const showEditProfile = ref(false);
+                const showEditProduct = ref(false);
                 
                 // 加载状态
                 const loginLoading = ref(false);
                 const registerLoading = ref(false);
                 const loadingProducts = ref(false);
                 const loadingMessages = ref(false);
+                const loadingMyProducts = ref(false);
                 const publishLoading = ref(false);
                 const sendingMessage = ref(false);
+                const updatingProfile = ref(false);
+                const updatingProduct = ref(false);
                 
                 // 表单数据
                 const loginForm = reactive({
@@ -435,18 +696,34 @@
                     email: '',
                     password: '',
                     phone: ''
-                });
-                  const productForm = reactive({
+                });                const productForm = reactive({
                     title: '',
                     description: '',
                     price: 0,
                     category: '',
                     imageUrl: ''
                 });
+
+                const profileForm = reactive({
+                    username: '',
+                    email: '',
+                    phone: ''
+                });
+
+                const editProductForm = reactive({
+                    id: null,
+                    title: '',
+                    description: '',
+                    price: 0,
+                    category: '',
+                    imageUrl: '',
+                    status: 'AVAILABLE'
+                });
                 
                 // 数据列表
                 const products = ref([]);
                 const messages = ref([]);
+                const myProducts = ref([]);
                 
                 // 搜索和筛选
                 const searchKeyword = ref('');
@@ -477,13 +754,20 @@
                         { min: 6, message: '密码长度至少6位', trigger: 'blur' }
                     ]
                 };
-                
-                const productRules = {
+                  const productRules = {
                     title: [{ required: true, message: '请输入商品名称', trigger: 'blur' }],
                     price: [{ required: true, message: '请输入价格', trigger: 'blur' }],
                     category: [{ required: true, message: '请选择分类', trigger: 'change' }],
                     description: [{ required: true, message: '请输入商品描述', trigger: 'blur' }]
-                };                // 计算属性
+                };
+
+                const profileRules = {
+                    username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+                    email: [
+                        { required: true, message: '请输入邮箱', trigger: 'blur' },
+                        { type: 'email', message: '邮箱格式不正确', trigger: 'blur' }
+                    ]
+                };// 计算属性
                 const filteredProducts = computed(() => {
                     console.log('filteredProducts计算属性被触发');
                     console.log('当前商品数量:', products.value.length);
@@ -522,20 +806,29 @@
                         searchProducts();
                     }
                 });
-                
-                // 方法
+                  // 方法
                 const handleMenuSelect = (index) => {
                     activeTab.value = index;
                     if (index === 'messages') {
                         loadMessages();
+                    } else if (index === 'profile') {
+                        loadMyProducts();
+                        loadMessages(); // 为了显示统计信息
                     }
                 };
-                
-                const handleUserCommand = (command) => {
+                  const handleUserCommand = (command) => {
                     if (command === 'logout') {
                         logout();
                     } else if (command === 'profile') {
                         activeTab.value = 'profile';
+                        // 初始化个人信息表单
+                        Object.assign(profileForm, {
+                            username: currentUser.value.username,
+                            email: currentUser.value.email || '',
+                            phone: currentUser.value.phone || ''
+                        });
+                        loadMyProducts();
+                        loadMessages();
                     }
                 };
                 
@@ -735,13 +1028,12 @@
                         imageUrl: ''
                     });
                 };
-                
-                const loadMessages = async () => {
+                  const loadMessages = async () => {
                     if (!isLoggedIn.value) return;
                     
                     loadingMessages.value = true;
                     try {
-                        const response = await fetch(`${API_BASE}/messages/my`, {
+                        const response = await fetch(`${API_BASE}/messages/my/json`, {
                             headers: {
                                 'Authorization': `Bearer ${currentToken.value}`
                             }
@@ -805,10 +1097,184 @@
                         sendingMessage.value = false;
                     }
                 };
-                
-                const editProduct = (product) => {
+                  const editProduct = (product) => {
                     // TODO: 实现编辑商品功能
                     ElMessage.info('编辑功能待实现');
+                };
+
+                // 个人中心相关方法
+                const loadMyProducts = async () => {
+                    if (!isLoggedIn.value) return;
+                    
+                    loadingMyProducts.value = true;
+                    try {
+                        const response = await fetch(`${API_BASE}/products/my`, {
+                            headers: {
+                                'Authorization': `Bearer ${currentToken.value}`
+                            }
+                        });
+                        
+                        const data = await response.json();
+                        if (response.ok) {
+                            myProducts.value = Array.isArray(data) ? data : (data.data || []);
+                        } else {
+                            ElMessage.error(data.message || '加载我的商品失败');
+                        }
+                    } catch (error) {
+                        ElMessage.error('网络错误：' + error.message);
+                    } finally {
+                        loadingMyProducts.value = false;
+                    }
+                };
+
+                const editMyProduct = (product) => {
+                    Object.assign(editProductForm, {
+                        id: product.id,
+                        title: product.title,
+                        description: product.description,
+                        price: product.price,
+                        category: product.category,
+                        imageUrl: product.imageUrl || '',
+                        status: product.status
+                    });
+                    showEditProduct.value = true;
+                };
+
+                const updateProduct = async () => {
+                    updatingProduct.value = true;
+                    try {
+                        const response = await fetch(`${API_BASE}/products/${editProductForm.id}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${currentToken.value}`
+                            },
+                            body: JSON.stringify({
+                                title: editProductForm.title,
+                                description: editProductForm.description,
+                                price: editProductForm.price,
+                                category: editProductForm.category,
+                                imageUrl: editProductForm.imageUrl,
+                                status: editProductForm.status
+                            })
+                        });
+                        
+                        const data = await response.json();
+                        if (response.ok) {
+                            ElMessage.success('商品更新成功！');
+                            showEditProduct.value = false;
+                            loadMyProducts();
+                            loadProducts(); // 同时刷新市场页面
+                        } else {
+                            ElMessage.error(data.message || '更新失败');
+                        }
+                    } catch (error) {
+                        ElMessage.error('网络错误：' + error.message);
+                    } finally {
+                        updatingProduct.value = false;
+                    }
+                };                const markAsSold = async (product) => {
+                    try {
+                        await ElMessageBox.confirm(
+                            `确定要将商品"${product.title}"标记为已售出吗？`,
+                            '提示',
+                            {
+                                confirmButtonText: '确定',
+                                cancelButtonText: '取消',
+                                type: 'warning',
+                            }
+                        );
+
+                        const response = await fetch(`${API_BASE}/products/${product.id}/sold`, {
+                            method: 'PUT',
+                            headers: {
+                                'Authorization': `Bearer ${currentToken.value}`
+                            }
+                        });
+                        
+                        const data = await response.json();
+                        if (response.ok) {
+                            ElMessage.success('已标记为售出！');
+                            // 立即更新本地商品状态
+                            const index = myProducts.value.findIndex(p => p.id === product.id);
+                            if (index > -1) {
+                                myProducts.value[index].status = 'SOLD';
+                            }
+                            // 同时刷新主商品列表
+                            loadProducts();
+                        } else {
+                            ElMessage.error(data.message || '操作失败');
+                        }
+                    } catch (error) {
+                        if (error !== 'cancel') {
+                            ElMessage.error('网络错误：' + error.message);
+                        }
+                    }
+                };                const deleteMyProduct = async (product) => {
+                    try {
+                        await ElMessageBox.confirm(
+                            `确定要删除商品"${product.title}"吗？此操作不可撤销！`,
+                            '警告',
+                            {
+                                confirmButtonText: '确定删除',
+                                cancelButtonText: '取消',
+                                type: 'warning',
+                            }
+                        );
+
+                        const response = await fetch(`${API_BASE}/products/${product.id}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Authorization': `Bearer ${currentToken.value}`
+                            }
+                        });
+                        
+                        if (response.ok) {
+                            ElMessage.success('商品删除成功！');
+                            // 立即从本地数组中移除该商品
+                            const index = myProducts.value.findIndex(p => p.id === product.id);
+                            if (index > -1) {
+                                myProducts.value.splice(index, 1);
+                            }
+                            // 同时更新主商品列表
+                            loadProducts();
+                        } else {
+                            const data = await response.json();
+                            ElMessage.error(data.message || '删除失败');
+                        }
+                    } catch (error) {
+                        if (error !== 'cancel') {
+                            ElMessage.error('网络错误：' + error.message);
+                        }
+                    }
+                };const updateProfile = async () => {
+                    updatingProfile.value = true;
+                    try {
+                        const response = await fetch(`${API_BASE}/auth/profile?currentUsername=${encodeURIComponent(currentUser.value.username)}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${currentToken.value}`
+                            },
+                            body: JSON.stringify(profileForm)
+                        });
+                        
+                        const data = await response.json();
+                        if (response.ok) {
+                            // 更新本地用户信息
+                            currentUser.value = { ...currentUser.value, ...profileForm };
+                            localStorage.setItem('user', JSON.stringify(currentUser.value));
+                            
+                            ElMessage.success('个人信息更新成功！');
+                            showEditProfile.value = false;
+                        } else {
+                            ElMessage.error(data.message || '更新失败');
+                        }
+                    } catch (error) {
+                        ElMessage.error('网络错误：' + error.message);
+                    } finally {
+                        updatingProfile.value = false;
+                    }
                 };
                   // 工具方法
                 const getCategoryTagType = (category) => {
@@ -841,8 +1307,7 @@
                     // 加载商品列表
                     loadProducts();
                 });
-                
-                return {
+                  return {
                     // 响应式数据
                     activeTab,
                     isLoggedIn,
@@ -850,21 +1315,29 @@
                     showLogin,
                     showRegister,
                     showContactDialog,
+                    showEditProfile,
+                    showEditProduct,
                     loginLoading,
                     registerLoading,
                     loadingProducts,
                     loadingMessages,
+                    loadingMyProducts,
                     publishLoading,
                     sendingMessage,
+                    updatingProfile,
+                    updatingProduct,
                     
                     // 表单数据
                     loginForm,
                     registerForm,
                     productForm,
+                    profileForm,
+                    editProductForm,
                     
                     // 数据列表
                     products,
                     messages,
+                    myProducts,
                     filteredProducts,
                     
                     // 搜索筛选
@@ -879,7 +1352,10 @@
                     // 验证规则
                     loginRules,
                     registerRules,
-                    productRules,                    // 方法
+                    productRules,
+                    profileRules,
+                    
+                    // 方法
                     handleMenuSelect,
                     handleUserCommand,
                     handleLogin,
@@ -891,11 +1367,20 @@
                     debugFilter,
                     publishProduct,
                     resetProductForm,
-                    loadMessages,                    contactSeller,
+                    loadMessages,
+                    contactSeller,
                     sendMessage,
                     editProduct,
                     getCategoryTagType,
-                    formatDate
+                    formatDate,
+                    
+                    // 个人中心方法
+                    loadMyProducts,
+                    editMyProduct,
+                    updateProduct,
+                    markAsSold,
+                    deleteMyProduct,
+                    updateProfile
                 };
             }
         }).use(ElementPlus).mount('#app');

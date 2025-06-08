@@ -2,6 +2,7 @@ package org.example.campusmarket.service;
 
 import org.example.campusmarket.dto.UserLoginDto;
 import org.example.campusmarket.dto.UserRegistrationDto;
+import org.example.campusmarket.dto.UserProfileUpdateDto;
 import org.example.campusmarket.entity.User;
 import org.example.campusmarket.repository.UserRepository;
 import org.example.campusmarket.util.JwtUtil;
@@ -118,9 +119,7 @@ public class UserService {
      */
     public Optional<User> findByUsername(String username) {
         return userRepository.findByUsername(username);
-    }
-
-    /**
+    }    /**
      * 更新用户密码
      */
     public boolean updatePassword(String username, String oldPassword, String newPassword) {
@@ -134,5 +133,65 @@ public class UserService {
             }
         }
         return false;
+    }
+
+    /**
+     * 更新用户个人信息
+     */
+    public Map<String, Object> updateUserProfile(String currentUsername, UserProfileUpdateDto updateDto) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            Optional<User> userOptional = userRepository.findByUsername(currentUsername);
+            if (userOptional.isEmpty()) {
+                response.put("success", false);
+                response.put("message", "用户不存在");
+                return response;
+            }
+            
+            User user = userOptional.get();
+            
+            // 检查新用户名是否已被其他用户使用
+            if (!updateDto.getUsername().equals(currentUsername)) {
+                if (userRepository.existsByUsername(updateDto.getUsername())) {
+                    response.put("success", false);
+                    response.put("message", "用户名已被使用");
+                    return response;
+                }
+            }
+            
+            // 检查新邮箱是否已被其他用户使用
+            if (!updateDto.getEmail().equals(user.getEmail())) {
+                if (userRepository.existsByEmail(updateDto.getEmail())) {
+                    response.put("success", false);
+                    response.put("message", "邮箱已被使用");
+                    return response;
+                }
+            }
+            
+            // 更新用户信息
+            user.setUsername(updateDto.getUsername());
+            user.setEmail(updateDto.getEmail());
+            user.setPhone(updateDto.getPhone());
+            
+            User savedUser = userRepository.save(user);
+            
+            // 返回更新后的用户信息
+            Map<String, Object> userInfo = new HashMap<>();
+            userInfo.put("id", savedUser.getId());
+            userInfo.put("username", savedUser.getUsername());
+            userInfo.put("email", savedUser.getEmail());
+            userInfo.put("phone", savedUser.getPhone());
+            
+            response.put("success", true);
+            response.put("message", "个人信息更新成功");
+            response.put("user", userInfo);
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "更新失败：" + e.getMessage());
+        }
+        
+        return response;
     }
 }

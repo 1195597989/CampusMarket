@@ -68,13 +68,11 @@ public class MessageService {    @Autowired
      */
     public List<Message> getProductMessages(Long productId) {
         return messageRepository.findByProductIdOrderByCreatedAtDesc(productId);
-    }
-
-    /**
-     * 获取用户的所有留言
+    }    /**
+     * 获取用户的所有留言（发送的和接收的）
      */
     public List<Message> getUserMessages(User user) {
-        return messageRepository.findByUserOrderByCreatedAtDesc(user);
+        return messageRepository.findAllUserRelatedMessages(user);
     }
 
     /**
