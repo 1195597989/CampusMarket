@@ -26,11 +26,27 @@ public class ProductUpdateDto {
     
     private String imageUrl;
     
-    // 允许更新状态
+    // 商品状态 - 这是与 ProductCreateDto 的主要区别
     private Product.ProductStatus status;
 
     // 构造函数
     public ProductUpdateDto() {}
+
+    public ProductUpdateDto(String title, String description, BigDecimal price, String category) {
+        this.title = title;
+        this.description = description;
+        this.price = price;
+        this.category = category;
+    }
+
+    public ProductUpdateDto(String title, String description, BigDecimal price, String category, String imageUrl, Product.ProductStatus status) {
+        this.title = title;
+        this.description = description;
+        this.price = price;
+        this.category = category;
+        this.imageUrl = imageUrl;
+        this.status = status;
+    }
 
     // Getter和Setter方法
     public String getTitle() {

@@ -5,6 +5,7 @@ import cn.hutool.json.JSONObject;
 import jakarta.validation.Valid;
 import org.example.campusmarket.dto.ApiResponse;
 import org.example.campusmarket.dto.ProductCreateDto;
+import org.example.campusmarket.dto.ProductUpdateDto;
 import org.example.campusmarket.entity.Product;
 import org.example.campusmarket.entity.User;
 import org.example.campusmarket.security.UserPrincipal;
@@ -281,6 +282,28 @@ public class ProductController {
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
         try {
             Product updatedProduct = productService.updateProduct(id, productDto, userPrincipal.getUsername());
+            if (updatedProduct != null) {
+                return ResponseEntity.ok(ApiResponse.success("商品更新成功", updatedProduct));
+            } else {
+                return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("更新失败，请检查商品是否存在或您是否有权限", 400));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                .body(ApiResponse.error("更新失败：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 更新商品信息（包括状态）
+     */
+    @PutMapping("/{id}/status")
+    public ResponseEntity<ApiResponse<Product>> updateProductWithStatus(
+            @PathVariable Long id,
+            @Valid @RequestBody ProductUpdateDto productDto,
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        try {
+            Product updatedProduct = productService.updateProductWithStatus(id, productDto, userPrincipal.getUsername());
             if (updatedProduct != null) {
                 return ResponseEntity.ok(ApiResponse.success("商品更新成功", updatedProduct));
             } else {
